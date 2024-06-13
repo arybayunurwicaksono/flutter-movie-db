@@ -159,6 +159,7 @@ class _WidgetAppBar extends SliverAppBar {
                       if (context
                           .read<MovieBookmarkProvider>()
                           .isBookmarked(movie.id)) {
+                        print('bookmark exist');
                         const snackBar = SnackBar(
                           content: Text('Already bookmarked'),
                         );
@@ -167,41 +168,61 @@ class _WidgetAppBar extends SliverAppBar {
                       } else {
                         context
                             .read<MovieBookmarkProvider>()
-                            .addBookmark('${movie.id}');
-
+                            .addBookmarkWithDb(movie);
+                        print('bookmark success');
                         const snackBar = SnackBar(
-                          content: Text('Added to bookmark'),
+                          content: Text('Bookmarked success'),
                         );
+
                         ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       }
 
-                      // try {
+                      // if (context
+                      //     .read<MovieBookmarkProvider>()
+                      //     .isBookmarked(movie.id)) {
+                      //   const snackBar = SnackBar(
+                      //     content: Text('Already bookmarked'),
+                      //   );
+
+                      //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      // } else {
                       //   context
                       //       .read<MovieBookmarkProvider>()
                       //       .addBookmark('${movie.id}');
-                      //   developer.log('bookmark success',
-                      //       name: 'my.app.category');
-                      //   // Consumer<MovieBookmarkProvider>(
-                      //   //   builder: (context, value, child) {
-                      //   //     final bookmark = value.movie;
-                      //   //     developer.log('bookmark $bookmark',
-                      //   //         name: 'my.app.category');
-                      //   //     return const Text('success');
-                      //   //   },
-                      //   // );
-                      // } catch (e) {
-                      //   developer.log('$e', name: 'my.app.category');
+
+                      //   const snackBar = SnackBar(
+                      //     content: Text('Added to bookmark'),
+                      //   );
+                      //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       // }
 
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (_) => WebViewWidget(
-                      //       title: movie.title,
-                      //       url: movie.homepage,
-                      //     ),
-                      //   ),
-                      // );
+                      // // try {
+                      // //   context
+                      // //       .read<MovieBookmarkProvider>()
+                      // //       .addBookmark('${movie.id}');
+                      // //   developer.log('bookmark success',
+                      // //       name: 'my.app.category');
+                      // //   // Consumer<MovieBookmarkProvider>(
+                      // //   //   builder: (context, value, child) {
+                      // //   //     final bookmark = value.movie;
+                      // //   //     developer.log('bookmark $bookmark',
+                      // //   //         name: 'my.app.category');
+                      // //   //     return const Text('success');
+                      // //   //   },
+                      // //   // );
+                      // // } catch (e) {
+                      // //   developer.log('$e', name: 'my.app.category');
+                      // // }
+
+                      // // Navigator.push(
+                      // //   context,
+                      // //   MaterialPageRoute(
+                      // //     builder: (_) => WebViewWidget(
+                      // //       title: movie.title,
+                      // //       url: movie.homepage,
+                      // //     ),
+                      // //   ),
+                      // // );
                     },
                     icon: const Icon(Icons.bookmark),
                   ),

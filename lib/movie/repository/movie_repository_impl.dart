@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yt_flutter_movie_db/movie/models/bookmark_movie_model.dart';
 import 'package:yt_flutter_movie_db/movie/models/movie_detail_model.dart';
 import 'package:yt_flutter_movie_db/movie/models/movie_model.dart';
 import 'package:yt_flutter_movie_db/movie/models/movie_video_model.dart';
@@ -10,6 +12,8 @@ import 'dart:developer' as developer;
 
 class MovieRepositoryImpl implements MovieRepository {
   final Dio _dio;
+
+  static const String _bookmarkBox = 'bookmark';
 
   MovieRepositoryImpl(this._dio);
 
@@ -156,5 +160,28 @@ class MovieRepositoryImpl implements MovieRepository {
   Future<void> saveIdArray(List<String> idArray) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('id_array', idArray);
+  }
+
+  @override
+  Future<void> addIdWithDb({required BookmarkMovieModel movie}) async {
+    final bookmarkMoviesBox = Hive.box<BookmarkMovieModel>('bookmark');
+    try {
+      bookmarkMoviesBox.add(movie);
+      print('BookmarkTesting, provider add success');
+    } catch (e) {
+      print('BookmarkTesting, $e');
+    }
+  }
+
+  @override
+  Future<Box<BookmarkMovieModel>> getIdArrayWithDb() async {
+    return await Hive.openBox<BookmarkMovieModel>(_bookmarkBox);
+  }
+
+  @override
+  Future<void> saveIdArrayWithDb(int idArray) async {
+    final _dbBox = await Hive.openBox<BookmarkMovieModel>(_bookmarkBox);
+
+    _dbBox.deleteAt(idArray);
   }
 }
