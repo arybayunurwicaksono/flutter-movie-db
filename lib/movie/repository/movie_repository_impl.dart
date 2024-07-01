@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yt_flutter_movie_db/movie/models/bookmark_movie_model.dart';
@@ -16,6 +17,7 @@ class MovieRepositoryImpl implements MovieRepository {
   static const String _bookmarkBox = 'bookmark';
 
   MovieRepositoryImpl(this._dio);
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   @override
   Future<Either<String, MovieResponseModel>> getDiscover({int page = 1}) async {
@@ -165,12 +167,7 @@ class MovieRepositoryImpl implements MovieRepository {
   @override
   Future<void> addIdWithDb({required BookmarkMovieModel movie}) async {
     final bookmarkMoviesBox = Hive.box<BookmarkMovieModel>('bookmark');
-    try {
-      bookmarkMoviesBox.add(movie);
-      print('BookmarkTesting, provider add success');
-    } catch (e) {
-      print('BookmarkTesting, $e');
-    }
+    bookmarkMoviesBox.add(movie);
   }
 
   @override
@@ -183,5 +180,57 @@ class MovieRepositoryImpl implements MovieRepository {
     final _dbBox = await Hive.openBox<BookmarkMovieModel>(_bookmarkBox);
 
     _dbBox.deleteAt(idArray);
+  }
+
+  @override
+  Future<bool> checkBookmarkWithDb(int id) async {
+    bool status = false;
+    var result = await getIdArrayWithDb();
+    if (result.isNotEmpty) {
+      for (int i = 0; i < result.length; i++) {
+        print('BookmarkTesting : $i, ${result.getAt(i).toString()}');
+        if (result.getAt(i)!.id == id) {
+          status = true;
+        }
+      }
+    }
+    return status;
+  }
+
+  @override
+  Future<void> saveEncryptedData(String key, String value) async {
+    await _secureStorage.write(key: key, value: value);
+  }
+
+  @override
+  Future<String?> getEncryptedData(String key) async {
+    return await _secureStorage.read(key: key);
+  }
+
+  @override
+  Future<void> deleteEncryptedData(String key) async {
+    await _secureStorage.delete(key: key);
+  }
+
+  @override
+  Future<Either<String, MovieResponseModel>> getLastSearch(
+      {required String query, int page = 1}) async {
+    try {
+      final result = await _dio.get(
+        '/search/movie',
+        queryParameters: {'query': query, 'page': page},
+      );
+      if (result.statusCode == 200 && result.data != null) {
+        final model = MovieResponseModel.fromMap(result.data);
+        return Right(model);
+      }
+      return const Left('Error get search movies');
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(e.response.toString());
+      }
+
+      return const Left('Another error on get search movies');
+    }
   }
 }

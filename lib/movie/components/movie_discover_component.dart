@@ -1,8 +1,10 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yt_flutter_movie_db/movie/pages/movie_detail_page.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_discover_provider.dart';
+import 'package:yt_flutter_movie_db/movie/route/app_router.gr.dart';
 import 'package:yt_flutter_movie_db/widget/item_movie_widget.dart';
 
 class MovieDiscoverComponent extends StatefulWidget {
@@ -50,11 +52,7 @@ class _MovieDiscoverComponentState extends State<MovieDiscoverComponent> {
                   heightPoster: 160,
                   widthPoster: 100,
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) {
-                        return MovieDetailPage(id: movie.id);
-                      },
-                    ));
+                    AutoRouter.of(context).push(MovieDetailRoute(id: movie.id));
                   },
                 );
               },

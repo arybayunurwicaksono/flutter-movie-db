@@ -3,12 +3,14 @@ import 'package:get_it/get_it.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_bookmark_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_detail_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_discover_provider.dart';
+import 'package:yt_flutter_movie_db/movie/providers/movie_get_last_search_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_now_playing_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_top_rated_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_videos_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_search_provider.dart';
 import 'package:yt_flutter_movie_db/movie/repository/movie_repository.dart';
 import 'package:yt_flutter_movie_db/movie/repository/movie_repository_impl.dart';
+import 'package:yt_flutter_movie_db/movie/view_model/movie_bookmark_view_model.dart';
 
 import 'app_constants.dart';
 
@@ -34,8 +36,14 @@ void setup() {
   sl.registerFactory<MovieSearchProvider>(
     () => MovieSearchProvider(sl()),
   );
+  sl.registerFactory<MovieGetLastSearchProvider>(
+    () => MovieGetLastSearchProvider(sl()),
+  );
   sl.registerFactory<MovieBookmarkProvider>(
     () => MovieBookmarkProvider(sl()),
+  );
+  sl.registerFactory<MovieBookmarkViewModel>(
+    () => MovieBookmarkViewModel(sl()),
   );
   // Register Repository
   sl.registerLazySingleton<MovieRepository>(() => MovieRepositoryImpl(sl()));

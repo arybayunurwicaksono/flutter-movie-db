@@ -18,4 +18,10 @@ abstract class MovieRepository {
   Future<void> addIdWithDb({required BookmarkMovieModel movie});
   Future<Box<BookmarkMovieModel>> getIdArrayWithDb();
   Future<void> saveIdArrayWithDb(int idArray);
+  Future<bool> checkBookmarkWithDb(int idArray);
+  Future<void> saveEncryptedData(String key, String value);
+  Future<String?> getEncryptedData(String key);
+  Future<void> deleteEncryptedData(String key);
+  Future<Either<String, MovieResponseModel>> getLastSearch(
+      {required String query, int page = 1});
 }

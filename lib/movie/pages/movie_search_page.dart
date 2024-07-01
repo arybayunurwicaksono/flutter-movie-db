@@ -1,11 +1,15 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_search_provider.dart';
+import 'package:yt_flutter_movie_db/movie/view_model/movie_bookmark_view_model.dart';
 import 'package:yt_flutter_movie_db/widget/image_widget.dart';
 
 import 'movie_detail_page.dart';
 
 class MovieSearchPage extends SearchDelegate {
+  late final MovieBookmarkViewModel _movieBookmarkViewModel;
+
   @override
   String? get searchFieldLabel => "Search Movies";
 
@@ -46,6 +50,16 @@ class MovieSearchPage extends SearchDelegate {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (query.isNotEmpty) {
         context.read<MovieSearchProvider>().search(context, query: query);
+        try {
+          context
+              .read<MovieBookmarkViewModel>()
+              .saveEncryptedData('searchQuery', query);
+
+          print(
+              'encryptedPreferences : ${context.read<MovieBookmarkViewModel>().searchQuery}');
+        } catch (e) {
+          print('encryptedPreferences : error : $e');
+        }
       }
     });
 

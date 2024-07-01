@@ -1,7 +1,9 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yt_flutter_movie_db/movie/pages/movie_detail_page.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_now_playing_provider.dart';
+import 'package:yt_flutter_movie_db/movie/route/app_router.gr.dart';
 import 'package:yt_flutter_movie_db/widget/image_widget.dart';
 
 class MovieNowPlayingComponent extends StatefulWidget {
@@ -114,11 +116,8 @@ class _MovieNowPlayingComponentState extends State<MovieNowPlayingComponent> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(
-                              builder: (_) {
-                                return MovieDetailPage(id: movie.id);
-                              },
-                            ));
+                            AutoRouter.of(context)
+                                .push(MovieDetailRoute(id: movie.id));
                           },
                         ),
                       ))

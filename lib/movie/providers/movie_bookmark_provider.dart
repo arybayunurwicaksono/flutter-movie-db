@@ -37,7 +37,7 @@ class MovieBookmarkProvider extends ChangeNotifier {
     }
   }
 
-  void addBookmarkWithDb(MovieDetailModel movie) {
+  Future<void> addBookmarkWithDb(MovieDetailModel movie) async {
     var movies = BookmarkMovieModel(
       backdropPath: movie.backdropPath,
       id: movie.id,
@@ -46,6 +46,7 @@ class MovieBookmarkProvider extends ChangeNotifier {
       voteAverage: movie.voteAverage,
       voteCount: movie.voteCount,
     );
+
     _movieRepository.addIdWithDb(movie: movies);
     notifyListeners();
   }
@@ -56,20 +57,12 @@ class MovieBookmarkProvider extends ChangeNotifier {
     return _movieDb!;
   }
 
-  void removeBookmarkWithDb(String id) async {
+  Future<void> removeBookmarkWithDb(String id) async {
     await _movieRepository.saveIdArrayWithDb(int.parse(id));
     notifyListeners();
   }
 
-  bool isBookmarked(int id) {
-    bool status = false;
-    for (int i = 0; i < _movieDb!.length; i++) {
-      print('BookmarkTesting : $i, ${_movieDb!.getAt(i).toString()}');
-      if (_movieDb!.getAt(i)!.id == id) {
-        notifyListeners();
-        return status = true;
-      }
-    }
-    return status;
+  Future<bool> isBookmarked(int id) async {
+    return await _movieRepository.checkBookmarkWithDb(id);
   }
 }

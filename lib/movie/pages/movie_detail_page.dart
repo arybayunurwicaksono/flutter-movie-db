@@ -1,18 +1,42 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:yt_flutter_movie_db/injector.dart';
+import 'package:yt_flutter_movie_db/movie/models/bookmark_remove_type.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_bookmark_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_detail_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_videos_provider.dart';
+import 'package:yt_flutter_movie_db/movie/view_model/movie_bookmark_view_model.dart';
 import 'package:yt_flutter_movie_db/widget/image_widget.dart';
 import 'package:yt_flutter_movie_db/widget/item_movie_widget.dart';
 import 'package:yt_flutter_movie_db/widget/youtube_player_widget.dart';
 
-class MovieDetailPage extends StatelessWidget {
-  const MovieDetailPage({super.key, required this.id});
+@RoutePage()
+class MovieDetailPage extends StatefulWidget {
+  const MovieDetailPage({super.key, required this.id, this.callback});
 
   final int id;
+  final VoidCallback? callback;
+
+  @override
+  _MovieDetailPageState createState() => _MovieDetailPageState();
+}
+
+class _MovieDetailPageState extends State<MovieDetailPage> {
+  late final MovieBookmarkViewModel _movieBookmarkViewModel;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _movieBookmarkViewModel = Provider.of<MovieBookmarkViewModel>(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +44,11 @@ class MovieDetailPage extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (_) =>
-              sl<MovieGetDetailProvider>()..getDetail(context, id: id),
+              sl<MovieGetDetailProvider>()..getDetail(context, id: widget.id),
         ),
         ChangeNotifierProvider(
           create: (_) =>
-              sl<MovieGetVideosProvider>()..getVideos(context, id: id),
+              sl<MovieGetVideosProvider>()..getVideos(context, id: widget.id),
         ),
         ChangeNotifierProvider(
           create: (_) => sl<MovieBookmarkProvider>(),
@@ -33,7 +57,8 @@ class MovieDetailPage extends StatelessWidget {
       builder: (_, __) => Scaffold(
         body: CustomScrollView(
           slivers: [
-            _WidgetAppBar(context),
+            _WidgetAppBar(
+                context, widget.id, _movieBookmarkViewModel, widget.callback),
             Consumer<MovieGetVideosProvider>(
               builder: (_, provider, __) {
                 final videos = provider.videos;
@@ -114,19 +139,22 @@ class MovieDetailPage extends StatelessWidget {
   }
 }
 
-class _WidgetAppBar extends SliverAppBar {
+class _WidgetAppBar extends StatelessWidget {
   final BuildContext context;
+  final int movieId;
+  final MovieBookmarkViewModel _viewModel;
+  final VoidCallback? callback;
 
-  const _WidgetAppBar(this.context);
-
-  @override
-  Color? get backgroundColor => Colors.white;
-
-  @override
-  Color? get foregroundColor => Colors.black;
+  const _WidgetAppBar(
+      this.context, this.movieId, this._viewModel, this.callback);
 
   @override
-  Widget? get leading => Padding(
+  Widget build(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      expandedHeight: 300,
+      leading: Padding(
         padding: const EdgeInsets.all(8.0),
         child: CircleAvatar(
           backgroundColor: Colors.white,
@@ -140,109 +168,94 @@ class _WidgetAppBar extends SliverAppBar {
             ),
           ),
         ),
-      );
-
-  @override
-  List<Widget>? get actions => [
+      ),
+      actions: [
         Consumer<MovieGetDetailProvider>(
           builder: (_, provider, __) {
             final movie = provider.movie;
-
             if (movie != null) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  child: IconButton(
-                    onPressed: () {
-                      if (context
-                          .read<MovieBookmarkProvider>()
-                          .isBookmarked(movie.id)) {
-                        print('bookmark exist');
-                        const snackBar = SnackBar(
-                          content: Text('Already bookmarked'),
-                        );
+              return FutureBuilder<bool>(
+                future: _viewModel.isBookmarked(movie.id),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        child: Icon(Icons.bookmark_border),
+                      ),
+                    );
+                  } else if (snapshot.hasError) {
+                    return const Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        child: Icon(Icons.error),
+                      ),
+                    );
+                  } else {
+                    bool isBookmark = snapshot.data ?? false;
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          child: Observer(
+                            builder: (_) {
+                              isBookmark = _viewModel.status;
+                              return IconButton(
+                                  onPressed: () {
+                                    if (isBookmark) {
+                                      _viewModel.removeBookmarkWithDb(
+                                          movie.id.toString(),
+                                          BookmarkRemoveType.detail);
+                                      const snackBar = SnackBar(
+                                        content: Text('Removed from bookmark'),
+                                      );
+                                      _viewModel.getBookmarkWithDb();
 
-                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                      } else {
-                        context
-                            .read<MovieBookmarkProvider>()
-                            .addBookmarkWithDb(movie);
-                        print('bookmark success');
-                        const snackBar = SnackBar(
-                          content: Text('Bookmarked success'),
-                        );
-
-                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                      }
-
-                      // if (context
-                      //     .read<MovieBookmarkProvider>()
-                      //     .isBookmarked(movie.id)) {
-                      //   const snackBar = SnackBar(
-                      //     content: Text('Already bookmarked'),
-                      //   );
-
-                      //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                      // } else {
-                      //   context
-                      //       .read<MovieBookmarkProvider>()
-                      //       .addBookmark('${movie.id}');
-
-                      //   const snackBar = SnackBar(
-                      //     content: Text('Added to bookmark'),
-                      //   );
-                      //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                      // }
-
-                      // // try {
-                      // //   context
-                      // //       .read<MovieBookmarkProvider>()
-                      // //       .addBookmark('${movie.id}');
-                      // //   developer.log('bookmark success',
-                      // //       name: 'my.app.category');
-                      // //   // Consumer<MovieBookmarkProvider>(
-                      // //   //   builder: (context, value, child) {
-                      // //   //     final bookmark = value.movie;
-                      // //   //     developer.log('bookmark $bookmark',
-                      // //   //         name: 'my.app.category');
-                      // //   //     return const Text('success');
-                      // //   //   },
-                      // //   // );
-                      // // } catch (e) {
-                      // //   developer.log('$e', name: 'my.app.category');
-                      // // }
-
-                      // // Navigator.push(
-                      // //   context,
-                      // //   MaterialPageRoute(
-                      // //     builder: (_) => WebViewWidget(
-                      // //       title: movie.title,
-                      // //       url: movie.homepage,
-                      // //     ),
-                      // //   ),
-                      // // );
-                    },
-                    icon: const Icon(Icons.bookmark),
-                  ),
-                ),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(snackBar);
+                                      try {
+                                        callback!();
+                                      } catch (e) {
+                                        print('bookmarkTesting : $e');
+                                      }
+                                    } else {
+                                      try {
+                                        _viewModel.addBookmarkWithDb(movie);
+                                        const snackBar = SnackBar(
+                                          content: Text('Added to bookmark'),
+                                        );
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      } catch (e) {
+                                        print('bookmarkTesting : $e');
+                                      }
+                                    }
+                                    // Refresh the state to reflect the change
+                                    // setState(() {});
+                                  },
+                                  icon: Observer(
+                                      builder: (_) => Icon(_viewModel.status
+                                          ? Icons.bookmark
+                                          : Icons.bookmark_add_outlined)));
+                            },
+                          )),
+                    );
+                  }
+                },
               );
             }
-
             return const SizedBox();
           },
         ),
-      ];
-
-  @override
-  double? get expandedHeight => 300;
-
-  @override
-  Widget? get flexibleSpace => Consumer<MovieGetDetailProvider>(
+      ],
+      flexibleSpace: Consumer<MovieGetDetailProvider>(
         builder: (_, provider, __) {
           final movie = provider.movie;
-
           if (movie != null) {
             return ItemMovieWidget(
               movieDetail: movie,
@@ -253,14 +266,15 @@ class _WidgetAppBar extends SliverAppBar {
               radius: 0,
             );
           }
-
           return Container(
             color: Colors.black12,
             height: double.infinity,
             width: double.infinity,
           );
         },
-      );
+      ),
+    );
+  }
 }
 
 class _Content extends StatelessWidget {
@@ -300,7 +314,7 @@ class _Content extends StatelessWidget {
   }
 }
 
-class _WidgetSummary extends SliverToBoxAdapter {
+class _WidgetSummary extends StatelessWidget {
   TableRow _tableContent({required String title, required String content}) =>
       TableRow(children: [
         Padding(
@@ -317,10 +331,11 @@ class _WidgetSummary extends SliverToBoxAdapter {
       ]);
 
   @override
-  Widget? get child => Consumer<MovieGetDetailProvider>(
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Consumer<MovieGetDetailProvider>(
         builder: (_, provider, __) {
           final movie = provider.movie;
-
           if (movie != null) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,37 +383,24 @@ class _WidgetSummary extends SliverToBoxAdapter {
                     ),
                     children: [
                       _tableContent(
-                        title: "Adult",
-                        content: movie.adult ? "Yes" : "No",
-                      ),
+                          title: "Adult", content: movie.adult ? "Yes" : "No"),
                       _tableContent(
-                        title: "Popularity",
-                        content: '${movie.popularity}',
-                      ),
+                          title: "Popularity", content: '${movie.popularity}'),
+                      _tableContent(title: "Status", content: movie.status),
                       _tableContent(
-                        title: "Status",
-                        content: movie.status,
-                      ),
+                          title: "Budget", content: "${movie.budget}"),
                       _tableContent(
-                        title: "Budget",
-                        content: "${movie.budget}",
-                      ),
-                      _tableContent(
-                        title: "Revenue",
-                        content: "${movie.revenue}",
-                      ),
-                      _tableContent(
-                        title: "Tagline",
-                        content: movie.tagline,
-                      ),
+                          title: "Revenue", content: "${movie.revenue}"),
+                      _tableContent(title: "Tagline", content: movie.tagline),
                     ],
                   ),
                 ),
               ],
             );
           }
-
           return Container();
         },
-      );
+      ),
+    );
+  }
 }

@@ -1,19 +1,25 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 import 'package:yt_flutter_movie_db/movie/models/movie_model.dart';
 import 'package:yt_flutter_movie_db/movie/pages/movie_detail_page.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_discover_provider.dart';
+import 'package:yt_flutter_movie_db/movie/providers/movie_get_last_search_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_now_playing_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_top_rated_provider.dart';
+import 'package:yt_flutter_movie_db/movie/route/app_router.gr.dart';
 import 'package:yt_flutter_movie_db/widget/item_movie_widget.dart';
 
-enum TypeMovie { discover, topRated, nowPlaying }
+enum TypeMovie { discover, topRated, nowPlaying, lastSearch }
 
+@RoutePage()
 class MoviePaginationPage extends StatefulWidget {
-  const MoviePaginationPage({super.key, required this.type});
+  const MoviePaginationPage({super.key, required this.type, this.query});
 
   final TypeMovie type;
+
+  final String? query;
 
   @override
   State<MoviePaginationPage> createState() => _MoviePaginationPageState();
@@ -45,6 +51,13 @@ class _MoviePaginationPageState extends State<MoviePaginationPage> {
               page: pageKey,
               pagingController: _pagingController);
           break;
+        case TypeMovie.lastSearch:
+          context.read<MovieGetLastSearchProvider>().getLastSearchWithPaging(
+              context,
+              query: widget.query!,
+              page: pageKey,
+              pagingController: _pagingController);
+          break;
       }
     });
     super.initState();
@@ -62,6 +75,8 @@ class _MoviePaginationPageState extends State<MoviePaginationPage> {
               return const Text('Top Rated Movies');
             case TypeMovie.nowPlaying:
               return const Text('Now Playing Movies');
+            case TypeMovie.lastSearch:
+              return const Text('Last Search');
           }
         }),
         backgroundColor: Colors.white,
@@ -79,14 +94,7 @@ class _MoviePaginationPageState extends State<MoviePaginationPage> {
             heightPoster: 160.0,
             widthPoster: 100.0,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) {
-                    return MovieDetailPage(id: item.id);
-                  },
-                ),
-              );
+              AutoRouter.of(context).push(MovieDetailRoute(id: item.id));
             },
           ),
         ),

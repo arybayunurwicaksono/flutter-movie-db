@@ -8,10 +8,13 @@ import 'package:yt_flutter_movie_db/movie/models/bookmark_movie_model.dart';
 import 'package:yt_flutter_movie_db/movie/pages/movie_page.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_bookmark_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_discover_provider.dart';
+import 'package:yt_flutter_movie_db/movie/providers/movie_get_last_search_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_now_playing_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_get_top_rated_provider.dart';
 import 'package:yt_flutter_movie_db/movie/providers/movie_search_provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:yt_flutter_movie_db/movie/route/app_router.dart';
+import 'package:yt_flutter_movie_db/movie/view_model/movie_bookmark_view_model.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +31,7 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppRouter appRouter = AppRouter();
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
@@ -43,8 +47,14 @@ class App extends StatelessWidget {
           create: (_) => sl<MovieSearchProvider>(),
         ),
         ChangeNotifierProvider(
+          create: (_) => sl<MovieGetLastSearchProvider>(),
+        ),
+        ChangeNotifierProvider(
           create: (_) => sl<MovieBookmarkProvider>(),
         ),
+        Provider(
+          create: (_) => sl<MovieBookmarkViewModel>(),
+        )
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
@@ -52,8 +62,10 @@ class App extends StatelessWidget {
           primarySwatch: Colors.blue,
           useMaterial3: true,
         ),
-        home: const MoviePage(),
         debugShowCheckedModeBanner: false,
+        home: MaterialApp.router(
+          routerConfig: appRouter.config(),
+        ),
       ),
     );
   }
