@@ -15,4 +15,6 @@ class HiveDb {
   void removeBookmark(String id) {
     _bookmark.delete(id);
   }
+
+  //
 }
